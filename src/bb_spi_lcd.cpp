@@ -239,6 +239,51 @@ static void spilcdWriteData16(SPILCD *pLCD, unsigned short us, int iFlags);
 void spilcdSetPosition(SPILCD *pLCD, int x, int y, int w, int h, int iFlags);
 int spilcdFill(SPILCD *pLCD, unsigned short usData, int iFlags);
 // commands to initialize st7701 parallel display controller
+
+// For Waveshare Smart86 ESP32-S3 480X480 4" RGB LCD
+// https://github.com/waveshareteam/Waveshare-ESP32-components/blob/master/bsp/esp32_s3_touch_lcd_4b/esp32_s3_touch_lcd_4b.c
+const uint8_t st7701list_WS_S3_Smart86[] = {
+        6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x10,
+        3, 0xc0, 0x3b, 0x00,
+        3, 0xc1, 0x0d, 0x02,
+        3, 0xc2, 0x21, 0x08,
+        2, 0xcd, 0x08,
+        17, 0xb0, 0x00, 0x11, 0x18, 0x0e, 0x11, 0x06, 0x07, 0x08, 0x07, 0x22, 0x04, 0x12, 0x0f, 0xaa, 0x31, 0x18,
+        17, 0xb1, 0x00, 0x11, 0x19, 0x0e, 0x12, 0x07, 0x08, 0x08, 0x08, 0x22, 0x04, 0x11, 0x11, 0xa9, 0x32, 0x18,
+        6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x11,
+        2, 0xb0, 0x60,
+        2, 0xb1, 0x30,
+        2, 0xb2, 0x87, // was 0x07
+        2, 0xb3, 0x80,
+        2, 0xb5, 0x49,
+        2, 0xb7, 0x85,
+        2, 0xb8, 0x21,
+        2, 0xc1, 0x78,
+        2, 0xc2, 0x78,
+        4, 0xe0, 0x00, 0x1b, 0x02,
+        12, 0xe1, 0x08, 0xa0, 0x00, 0x00, 0x07, 0xa0, 0x00, 0x00, 0x00, 0x44, 0x44,
+        13, 0xe2, 0x11, 0x11, 0x44, 0x44, 0xed, 0xa0, 0x00, 0x00, 0xec, 0xa0, 0x00, 0x00,
+        5, 0xe3, 0x00, 0x00, 0x11, 0x11,
+        3, 0xe4, 0x44, 0x44,
+        17, 0xe5, 0x0a, 0xe9, 0xd8, 0xa0, 0x0c, 0xeb, 0xd8, 0xa0, 0x0e, 0xed, 0xd8, 0xa0, 0x10, 0xef, 0xd8, 0xa0,
+        5, 0xe6, 0x00, 0x00, 0x11, 0x11,
+        3, 0xe7, 0x44, 0x44,
+        17, 0xe8, 0x09, 0xe8, 0xd8, 0xa0, 0x0b, 0xea, 0xd8, 0xa0, 0x0d, 0xec, 0xd8, 0xa0, 0x0f, 0xee, 0xd8, 0xa0,
+        8, 0xeb, 0x02, 0x00, 0xe4, 0xe4, 0x88, 0x00, 0x40,
+        3, 0xec, 0x3c, 0x00,
+        17, 0xed, 0xab, 0x89, 0x76, 0x54, 0x02, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x20, 0x45, 0x67, 0x98, 0xba,
+        6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x00,
+        // 2, 0xe5, 0xe4,
+        // 6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x00, // Not in Waveshare init
+        2, 0x36, 0x00, // Added by Waveshare
+        2, 0x3a, 0x66, // 0x70 RGB888, 0x60 RGB666, 0x50 RGB565
+        1, 0x21, // 0x20 normal, 0x21 IPS // Added by Waveshare
+        // 1, 0x11, // sleep out // Not in Waveshare init
+        LCD_DELAY, 120,
+	    1, 0x29, // display on
+        0
+};
+
 // for the Makerfabs 4" 480x480 board
 const uint8_t st7701list[] = {
         6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x10,
@@ -279,6 +324,21 @@ const uint8_t st7701list[] = {
 	1, 0x29, // display on
         0
 };
+
+// 16-bit RGB panel 480x480 for WaveShare Smart86 S3 (4" 480x480)
+const BB_RGB rgbpanel_WS_S3_SMART86_480x480 = { 
+     -1 /* CS */, -1 /* SCK */,   -1 /* SDA */,
+     17 /* DE */,  3 /* VSYNC */, 46 /* HSYNC */, 9 /* PCLK */,
+     10 /* R0 */, 11 /* R1 */,    12 /* R2 */,   13 /* R3 */,  14 /* R4 */,          
+     21 /* G0 */,  8 /* G1 */,    18 /* G2 */,   45 /* G3 */,  38 /* G4 */,  39 /* G5 */, 
+     40 /* B0 */, 41 /* B1 */,    42 /* B2 */,    2 /* B3 */,   1 /* B4 */,
+     50 /* hsync_back_porch */, 10 /* hsync_front_porch */, 8 /* hsync_pulse_width */,
+     20 /* vsync_back_porch */, 10 /* vsync_front_porch */, 8 /* vsync_pulse_width */,
+     1 /* hsync_polarity */, 1 /* vsync_polarity */,
+    480, 480,
+    12000000 // speed
+};
+
 // 16-bit RGB panel 480x480
 const BB_RGB rgbpanel_480x480 = { 
     1 /* CS */, 12 /* SCK */, 11 /* SDA */,
@@ -8416,6 +8476,17 @@ int BB_SPI_LCD::begin(int iDisplayType)
             spilcdSetBuffer(&_lcd, (uint8_t *)RGBInit((BB_RGB *)&rgbpanel_lilygo));      
             break;
 
+        case DISPLAY_WS_S3_SMART86: // 4.0" 480x480 ESP32-S3
+            memset(&_lcd, 0, sizeof(_lcd));
+            _lcd.iDCPin = _lcd.iCSPin = -1; // make sure we don't try to toggle these
+            _lcd.iLEDPin = 4; 
+            _lcd.iLCDType = LCD_VIRTUAL_MEM;
+            _lcd.iWidth = _lcd.iCurrentWidth = 480;
+            _lcd.iHeight = _lcd.iCurrentHeight = 480;
+            spilcdWritePanelCommands(&rgbpanel_WS_S3_SMART86_480x480, st7701list_WS_S3_Smart86, sizeof(st7701list_WS_S3_Smart86));
+            spilcdSetBuffer(&_lcd, (uint8_t *)RGBInit((BB_RGB *)&rgbpanel_WS_S3_SMART86_480x480));
+            break;
+		
         case DISPLAY_UM_480x480: // UnexpectedMaker 4" 480x480
             memset(&_lcd, 0, sizeof(_lcd));
             _lcd.iDCPin = _lcd.iCSPin = -1; // make sure we don't try to toggle these
