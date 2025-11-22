@@ -238,26 +238,28 @@ static void spilcdWriteData8(SPILCD *pLCD, unsigned char c);
 static void spilcdWriteData16(SPILCD *pLCD, unsigned short us, int iFlags);
 void spilcdSetPosition(SPILCD *pLCD, int x, int y, int w, int h, int iFlags);
 int spilcdFill(SPILCD *pLCD, unsigned short usData, int iFlags);
-// commands to initialize st7701 parallel display controller
 
-// For Waveshare Smart86 ESP32-S3 480X480 4" RGB LCD
+// ST7701 Initialization commands for parallel display controller
+// Waveshare Smart86 ESP32-S3 480x480 4" RGB LCD
 // https://github.com/waveshareteam/Waveshare-ESP32-components/blob/master/bsp/esp32_s3_touch_lcd_4b/esp32_s3_touch_lcd_4b.c
-const uint8_t st7701list_WS_S3_Smart86[] = {
+const uint8_t ST7701_INIT_WS_S3_SMART86[] = {
         6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x10,
         3, 0xc0, 0x3b, 0x00,
         3, 0xc1, 0x0d, 0x02,
         3, 0xc2, 0x21, 0x08,
         2, 0xcd, 0x08,
+        // Positive Voltage Gamma Control
         17, 0xb0, 0x00, 0x11, 0x18, 0x0e, 0x11, 0x06, 0x07, 0x08, 0x07, 0x22, 0x04, 0x12, 0x0f, 0xaa, 0x31, 0x18,
+        // Negative Voltage Gamma Control
         17, 0xb1, 0x00, 0x11, 0x19, 0x0e, 0x12, 0x07, 0x08, 0x08, 0x08, 0x22, 0x04, 0x11, 0x11, 0xa9, 0x32, 0x18,
         6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x11,
-        2, 0xb0, 0x60,
-        2, 0xb1, 0x30,
-        2, 0xb2, 0x87, // was 0x07
+        2, 0xb0, 0x60,  // Vop=4.7375v
+        2, 0xb1, 0x30,  // VCOM=32 (was 0x32)
+        2, 0xb2, 0x87,  // VGH=15v (was 0x07)
         2, 0xb3, 0x80,
-        2, 0xb5, 0x49,
+        2, 0xb5, 0x49,  // VGL=-10.17v
         2, 0xb7, 0x85,
-        2, 0xb8, 0x21,
+        2, 0xb8, 0x21,   // AVDD=6.6 & AVCL=-4.6
         2, 0xc1, 0x78,
         2, 0xc2, 0x78,
         4, 0xe0, 0x00, 0x1b, 0x02,
@@ -275,12 +277,12 @@ const uint8_t st7701list_WS_S3_Smart86[] = {
         6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x00,
         // 2, 0xe5, 0xe4,
         // 6, 0xff, 0x77, 0x01, 0x00, 0x00, 0x00, // Not in Waveshare init
-        2, 0x36, 0x00, // Added by Waveshare
-        2, 0x3a, 0x66, // 0x70 RGB888, 0x60 RGB666, 0x50 RGB565
-        1, 0x21, // 0x20 normal, 0x21 IPS // Added by Waveshare
-        // 1, 0x11, // sleep out // Not in Waveshare init
+        2, 0x36, 0x00,  // Added by Waveshare
+        2, 0x3a, 0x66,  // 0x70 RGB888, 0x60 RGB666, 0x50 RGB565
+        1, 0x21,        // 0x20 normal, 0x21 IPS // Added by Waveshare
+        // 1, 0x11,     // sleep out // Not in Waveshare init
         LCD_DELAY, 120,
-	    1, 0x29, // display on
+	    1, 0x29,        // display on
         0
 };
 
@@ -325,7 +327,7 @@ const uint8_t st7701list[] = {
         0
 };
 
-// 16-bit RGB panel 480x480 for WaveShare Smart86 S3 (4" 480x480)
+// 16-bit RGB panel Waveshare Smart86 ESP32-S3 480x480 4" RGB LCD
 const BB_RGB rgbpanel_WS_S3_SMART86_480x480 = { 
      -1 /* CS */, -1 /* SCK */,   -1 /* SDA */,
      17 /* DE */,  3 /* VSYNC */, 46 /* HSYNC */, 9 /* PCLK */,
@@ -4047,21 +4049,34 @@ void qspiSetBrightness(SPILCD *pLCD ,uint8_t u8Brightness)
 void qspiRotate(SPILCD *pLCD, int iOrient)
 {
     uint8_t u8Mad = 0;
+
+    // <--- GEMINI FIX: Software Rotation Only for AXS15231
+    // The AXS15231 controller on this board does not reliably support hardware rotation commands
+    // (0x36 MADCTL) or they cause bus lockups/corruption.
+    // We return early here to prevent sending the command.
+    // The library's high-level spilcdSetOrientation function still updates the logical 
+    // width/height/orientation variables, enabling pure software rotation.
+
     switch (iOrient) {
         case LCD_ORIENTATION_0:
             break;
         case LCD_ORIENTATION_90:
+            if (pLCD->iLCDType == LCD_AXS15231 || pLCD->iLCDType == LCD_AXS15231B) {  // <--- GEMINI FIX
+                break; // no hardware rotation support;
+            }        
             u8Mad = 0x60;
             break;
         case LCD_ORIENTATION_180:
             u8Mad = 0xc0;
             break;
         case LCD_ORIENTATION_270:
+            if (pLCD->iLCDType == LCD_AXS15231 || pLCD->iLCDType == LCD_AXS15231B) {  // <--- GEMINI FIX
+                break; // no hardware rotation support;
+            }
             u8Mad = 0xa0;
             break;
     }
     qspiSendCMD(pLCD, 0x36, &u8Mad, 1);
-} /* qspiRotate() */
 #endif // ESP32+RP2040
 
 #ifdef ARDUINO_ARCH_ESP32
@@ -8483,7 +8498,7 @@ int BB_SPI_LCD::begin(int iDisplayType)
             _lcd.iLCDType = LCD_VIRTUAL_MEM;
             _lcd.iWidth = _lcd.iCurrentWidth = 480;
             _lcd.iHeight = _lcd.iCurrentHeight = 480;
-            spilcdWritePanelCommands(&rgbpanel_WS_S3_SMART86_480x480, st7701list_WS_S3_Smart86, sizeof(st7701list_WS_S3_Smart86));
+            spilcdWritePanelCommands(&rgbpanel_WS_S3_SMART86_480x480, ST7701_INIT_WS_S3_SMART86, sizeof(ST7701_INIT_WS_S3_SMART86));
             spilcdSetBuffer(&_lcd, (uint8_t *)RGBInit((BB_RGB *)&rgbpanel_WS_S3_SMART86_480x480));
             break;
 		
