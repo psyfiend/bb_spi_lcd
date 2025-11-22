@@ -365,6 +365,7 @@ enum
     DISPLAY_VPLAYER, // Kevin Darrah's ESP32-S3 Video Player board
     DISPLAY_TENSTAR_S3_114, // Tenstar Robot ESP32-S3 w/1.14" ST7789 135x240 LCD
     DISPLAY_WS_RP2350_164, // Waveshare RP2350 QSPI 1.64 AMOLED
+    DISPLAY_WS_S3_SMART86, // Waveshare Smart86 ESP32-S3 480x480 4" RGB
     DISPLAY_COUNT
 };
 #if !defined(BITBANK_LCD_MODES)
