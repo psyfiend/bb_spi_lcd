@@ -4077,6 +4077,8 @@ void qspiRotate(SPILCD *pLCD, int iOrient)
             break;
     }
     qspiSendCMD(pLCD, 0x36, &u8Mad, 1);
+} /* qspiRotate() */
+
 #endif // ESP32+RP2040
 
 #ifdef ARDUINO_ARCH_ESP32
